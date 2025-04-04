@@ -1,0 +1,6 @@
+@E_Ticaret_HostAddress = http://localhost:5237
+
+GET {{E_Ticaret_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

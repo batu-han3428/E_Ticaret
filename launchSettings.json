@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "composeLaunchAction": "LaunchBrowser",
+      "composeLaunchServiceName": "front",
+      "composeLaunchUrl": "http://localhost:3502",
+      "serviceActions": {
+        "e_ticaret": "StartDebugging",
+        "front": "StartDebugging",
+        "redis": "StartDebugging"
+      }
+    }
+  }
+}

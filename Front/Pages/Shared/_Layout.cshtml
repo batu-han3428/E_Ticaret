@@ -1,0 +1,27 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Front</title>
+    @await Html.PartialAsync("Styles")
+</head>
+<body>
+
+    <div id="preloder">
+        <div class="loader"></div>
+    </div>
+
+    <component type="typeof(Header)" render-mode="ServerPrerendered" />
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+    <component type="typeof(Footer)" render-mode="ServerPrerendered" />
+
+
+    @await Html.PartialAsync("Scripts")
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

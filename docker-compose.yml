@@ -1,0 +1,60 @@
+version: '3.4'
+
+volumes:
+  data-volume:
+networks:
+  v3network:
+     name: v3network
+
+services:
+
+  e_ticaret:
+    image: ${DOCKER_REGISTRY-}eticaret
+    container_name: e_ticaret
+    build:
+      context: .
+      dockerfile: E_Ticaret/Dockerfile
+    ports:
+      - "3500:3500"
+      - "3501:3501"
+    networks:
+      v3network:
+        aliases:
+          - e_ticaret
+ 
+  front:
+    image: ${DOCKER_REGISTRY-}front
+    container_name: front
+    build:
+        context: .
+        dockerfile: Front/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://*:3502
+      - DOTNET_USE_POLLING_FILE_WATCHER=1 
+    ports:
+      - "3502:3502"
+    volumes:
+      - .:/app
+      - /app/obj/
+      - /app/Front/obj/
+      - /app/Front/bin/
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ${APPDATA}/Microsoft/ASP.NETCore/https:/https:ro
+    networks:
+      v3network:
+        aliases:
+          - front
+
+  redis:
+    image: redis:latest
+    container_name: redis.cache
+    command: redis-server --requirepass 123Asd!!
+    environment:
+      - REDIS_PASSWORD=123Asd!!
+    ports:
+      - "6379:6379"
+    networks:
+      - v3network
+    
+  

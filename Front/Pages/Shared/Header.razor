@@ -1,0 +1,216 @@
+﻿@inject NavigationManager Navigation
+@using Common.Model
+@using Microsoft.AspNetCore.Http.Connections
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Net
+@using static System.Net.WebRequestMethods
+@implements IAsyncDisposable
+
+<div class="offcanvas-menu-overlay"></div>
+<div class="offcanvas-menu-wrapper">
+    <div class="offcanvas__close">+</div>
+    <ul class="offcanvas__widget">
+        <li><span class="icon_search search-switch"></span></li>
+        <li>
+            <a href="#">
+                <span class="icon_heart_alt"></span>
+                <div class="tip">2</div>
+            </a>
+        </li>
+        <li>
+            <a href="./shop-cart.html">
+                <span class="icon_bag_alt"></span>
+                <div class="cartItemCount tip">@cartItemCount</div>
+            </a>
+        </li>
+    </ul>
+    <div class="offcanvas__logo">
+        <a href="./index.html"><img src="img/logo.png" alt=""></a>
+    </div>
+    <div id="mobile-menu-wrap"></div>
+    <div class="offcanvas__auth">
+        <a href="#">Login</a>
+        <a href="#">Register</a>
+    </div>
+</div>
+
+<header class="header sticky-top">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-3 col-lg-2">
+                <div class="header__logo">
+                    <a href="#" data-page="home"><img src="img/logo.png" alt=""></a>
+                </div>
+            </div>
+            <div class="col-xl-6 col-lg-7">
+                <nav class="header__menu">
+                    <ul>
+                        <li><a href="#" data-page="home">Home</a></li>
+                        <li><a href="#">Women’s</a></li>
+                        <li><a href="#">Men’s</a></li>
+                        <li class="@(IsActive("/Shop") ? "active" : "")">
+                            <a href="/Shop">Shop</a>
+                        </li>
+                        <li>
+                            <a href="#">Pages</a>
+                            <ul class="dropdown">
+                                <li><a href="./product-details.html">Product Details</a></li>
+                                <li><a href="./shop-cart.html">Shop Cart</a></li>
+                                <li><a href="./checkout.html">Checkout</a></li>
+                                <li><a href="./blog-details.html">Blog Details</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="./blog.html">Blog</a></li>
+                        <li><a href="./contact.html">Contact</a></li>
+                    </ul>
+                </nav>
+            </div>
+            <div class="col-lg-3">
+                <div class="header__right">
+                    <div class="header__right__auth">
+                        <a href="#">Login</a>
+                        <a href="#">Register</a>
+                    </div>
+                    <ul class="header__right__widget">
+                        <li><span class="icon_search search-switch"></span></li>
+                        <li>
+                            <a href="#">
+                                <span class="icon_heart_alt"></span>
+                                <div class="tip">2</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="./shop-cart.html">
+                                <span class="icon_bag_alt"></span>
+                                <div class="cartItemCount tip">@cartItemCount</div>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="canvas__open">
+            <i class="fa fa-bars"></i>
+        </div>
+    </div>
+</header>
+
+<div class="search-model">
+    <div class="h-100 d-flex align-items-center justify-content-center">
+        <div class="search-close-switch">+</div>
+        <form class="search-model-form">
+            <input type="text" id="search-input" placeholder="Search here.....">
+        </form>
+    </div>
+</div>
+
+@code {
+    private HubConnection? hubConnection;
+    private int cartItemCount = 0;
+    private string currentUrl = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUrl = Navigation.Uri;
+
+        //await fetchCsrfAndApiKey();
+
+        hubConnection = new HubConnectionBuilder()
+        .WithUrl("http://e_ticaret:3500/cartHub", options =>
+        {
+            options.Cookies = new CookieContainer();
+            options.Transports = HttpTransportType.WebSockets | HttpTransportType.LongPolling;
+       
+        })
+        .WithAutomaticReconnect()
+        .Build();
+
+        hubConnection.On<CartModel>("ReceiveCartUpdate", (cart) =>
+        {
+            cartItemCount = cart.CartItems.Count;
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
+
+        // Navigation.LocationChanged += async (sender, args) =>
+        // {
+        //     await fetchCsrfAndApiKey();
+        // };
+
+        // await GetCartAsync();
+    }
+
+    async Task fetchCsrfAndApiKey()
+    {
+        try
+        {
+            // Çerezleri yöneten HttpClientHandler
+            var handler = new HttpClientHandler()
+                {
+                    CookieContainer = new CookieContainer(),
+                    UseCookies = true,
+                    AllowAutoRedirect = true
+                };
+
+            // HttpClient'ı handler ile başlatıyoruz
+            var httpClient = new HttpClient(handler);
+
+            // İstek gönderiyoruz
+            var response = await httpClient.GetAsync("http://e_ticaret:3500/api/Security/csrf-token");
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Çerezlerin doğru şekilde alındığını kontrol et
+                var cookies = handler.CookieContainer.GetCookies(new Uri("http://e_ticaret:3500"));
+                foreach (Cookie cookie in cookies)
+                {
+                    Console.WriteLine($"Cookie: {cookie.Name} = {cookie.Value}");
+                }
+                Console.WriteLine("✅ Yeni CSRF Token ve API Key alındı.");
+            }
+            else
+            {
+                Console.WriteLine($"❌ Hata: {response.StatusCode}");
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Hata: {ex.Message}");
+        }
+    }
+
+    // private async Task GetCartAsync()
+    // {
+    //     try
+    //     {
+    //         var http = new HttpClient();
+    //         var cart = await http.GetFromJsonAsync<CartModel>("http://e_ticaret:3500/api/Cart/GetCart");
+            
+    //         if (cart != null)
+    //         {
+    //             cartItemCount = cart.CartItems.Count;
+    //             StateHasChanged();
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Console.WriteLine($"Sepet verisi alınırken hata oluştu: {ex.Message}");
+    //     }
+    // }
+
+    // SignalR bağlantısını temizle
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    private bool IsActive(string page)
+    {
+        return currentUrl.EndsWith(page, StringComparison.OrdinalIgnoreCase);
+    }
+}

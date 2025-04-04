@@ -1,0 +1,28 @@
+version: '3.4'
+
+services:
+
+  e_ticaret:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_USE_POLLING_FILE_WATCHER=1
+      - API_KEY=12345-abcde-67890-fghij-klmno-pqrst
+      - AllowedFrontendUrl=http://localhost:3502
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ${APPDATA}/Microsoft/ASP.NETCore/https:/https:ro
+    ports:
+      - "3500:3500"
+      - "3501:3501"
+
+  front:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://*:3502
+      - DOTNET_USE_POLLING_FILE_WATCHER=1 
+    ports:
+      - "3502:3502"
+
+networks:
+  v3network:
+     name: v3network
